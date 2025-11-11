@@ -1,24 +1,49 @@
 import json
 import itertools
+import sys
 
 # Function to read DFA from a JSON file
 def readDFA(file_path):
-    with open(file_path, 'r') as f:
-        DFAData = json.load(f)
-    
+    try:
+        with open(file_path, 'r') as f:
+            DFAData = json.load(f)
+    except json.JSONDecodeError:
+        raise ValueError(f"Error: '{file_path}' is not a valid JSON file.")
+    except FileNotFoundError:
+        raise ValueError(f"Error: File '{file_path}' not found.")
+
+    # Error Checking
+    keyCheck = ["states", "start-state", "accept-states"]
+    for key in keyCheck:
+        if key not in DFAData:
+            raise ValueError(f"Error: Missing key '{key}' in DFA JSON.")
+        if not DFAData[key]:
+            raise ValueError(f"Error: '{key}' cannot be empty in DFA JSON.")
+
     states = set()
     transitions = {}
     acceptStates = set()
     startState = DFAData.get("start-state")
 
+    # Validates Start State
+    if not isinstance(startState, str) or not startState.strip():
+        raise ValueError("Error: 'start-state' must be a valid and non-empty string.")
+
     # Extract states and transitions
     for entry in DFAData["states"]:
+        if "state" not in entry:
+            raise ValueError("Error: Each state entry must have a 'state' key.")
         stateName = entry["state"]
         states.add(stateName)
-        transitions[stateName] = {symbol: entry[symbol] for symbol in entry if symbol not in ["state"]}
 
+        transitions[stateName] = {symbol: entry[symbol] for symbol in entry if symbol not in ["state"]}
+        if not transitions[stateName]:
+            raise ValueError(f"Error: State '{stateName}' must have at least one transition.")
+        
     # Extract accepting states
     for acc in DFAData["accept-states"]:
+        if "state" not in acc:
+            raise ValueError("Error: Each accept state entry must have a 'state' key.")
         acceptStates.add(acc["state"])
 
     return {
@@ -45,8 +70,11 @@ def generateUnionTransitions(dfa1, dfa2, productStates):
     for (s1, s2) in productStates:
         productTransitions[(s1, s2)] = {}
         for symbol in symbols:
-            next1 = dfa1["transitions"][s1][symbol]
-            next2 = dfa2["transitions"][s2][symbol]
+            try: 
+                next1 = dfa1["transitions"][s1][symbol]
+                next2 = dfa2["transitions"][s2][symbol]
+            except KeyError:
+                raise ValueError(f"Error: Transition for symbol '{symbol}' is missing in one of the DFAs.")
             productTransitions[(s1, s2)][symbol] = (next1, next2)
 
     return {
@@ -56,8 +84,18 @@ def generateUnionTransitions(dfa1, dfa2, productStates):
 
 #Test Function For Program
 #if __name__ == "__main__":
-    dfa1 = readDFA("TestFile11.json")
-    dfa2 = readDFA("TestFile12.json")
+    if len(sys.argv) != 3:
+        print("Usage: python ProjectCode.py <input1.json> <input2.json>")
+        sys.exit(1)
+
+    dfa1, dfa2 = sys.argv[1], sys.argv[2]
+
+    try:
+        dfa1 = readDFA(dfa1)
+        dfa2 = readDFA(dfa2)
+    except ValueError as e:
+        print(e)
+        sys.exit(1)
 
     # Step 1: build Cartesian product of states
     union_states = generateUnionStates(dfa1, dfa2)
