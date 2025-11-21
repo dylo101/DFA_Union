@@ -145,6 +145,60 @@ def validateUnionDFA(dfa1, dfa2, productStates, productTransitions, productStart
     else:
         return {"result": "Validation Success"}
 
+def outputUnionDFA(states, transitions, startState, acceptStates, filename="UnionDFA.json"):
+
+    print("\n=== UNION DFA OUTPUT ===")
+
+    # Print States
+    print("\nStates:")
+    for s in sorted(states):
+        print(" ", s)
+
+    # Print Start State
+    print("\nStart State:")
+    print(" ", startState)
+
+    # Print Accept State(s)
+    print("\nAccepting State(s):")
+    for s in sorted(acceptStates):
+        print(" ", s)
+
+    # Print Transitions
+    print("\nTransitions:")
+    for state, trans in sorted(transitions.items()):
+        print(f"{state}:")
+        for symbol, target in trans.items():
+            print(f"   on '{symbol}' -> {target}")
+
+    def tup_to_name(t):
+        return f"{t[0]},{t[1]}"
+
+    # Builds list for "states"
+    jsonStatesList = []
+    for state in sorted(states):
+        entry = {"state": tup_to_name(state)}
+        for symbol, dest in transitions[state].items():
+            entry[symbol] = tup_to_name(dest)
+        jsonStatesList.append(entry)
+
+    # Builds list for "accept-states"
+    jsonAcceptList = [{"state": tup_to_name(acc)} for acc in sorted(acceptStates)]
+
+    # Builds final JSON object
+    outputJSON = {
+        "states": jsonStatesList,
+        "start-state": tup_to_name(startState),
+        "accept-states": jsonAcceptList
+    }
+
+    # Save to JSON file
+    with open(filename, "w") as outFile:
+        json.dump(outputJSON, outFile, indent=4)
+
+    print(f"\nUnion DFA saved to file: {filename}")
+    print("======\n")
+
+
 # Test Function For Program
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -160,30 +214,14 @@ if __name__ == "__main__":
         print(e)
         sys.exit(1)
 
+    # Generate union DFA components
     union_states = generateUnionStates(dfa1, dfa2)
-    print("\n=== Union States ===")
-    for s in sorted(union_states):
-        print(s)
-
-    transitionsResult = generateUnionTransitions(dfa1, dfa2, union_states)
-    union_transitions = transitionsResult["transitions"]
-
-    print("\n=== Union Transitions ===")
-    for s, trans in sorted(union_transitions.items()):
-        print(f"{s}:")
-        for sym, dest in trans.items():
-            print(f"  on '{sym}' -> {dest}")
-
+    transitionData = generateUnionTransitions(dfa1, dfa2, union_states)
+    union_transitions = transitionData["transitions"]
     union_accepts = generateUnionAcceptStates(dfa1, dfa2, union_states)
-    print("\n=== Union Accepting States ===")
-    for s in sorted(union_accepts):
-        print(s)
-
     union_start = generateUnionStartState(dfa1, dfa2)
-    print("\n=== Union Start State ===")
-    print(union_start)
 
-    print("\n=== Validation Result ===")
+    # Validate DFA
     validation = validateUnionDFA(
         dfa1,
         dfa2,
@@ -195,7 +233,16 @@ if __name__ == "__main__":
 
     if validation["result"] == "Validation Success":
         print("Validation Success")
+        outputUnionDFA(
+            union_states,
+            union_transitions,
+            union_start,
+            union_accepts,
+            "UnionDFA.json"
+        )
+        print("The Union DFA has been successfully generated and created as a file! Thank you!")
     else:
         print("Validation Fail")
         for err in validation.get("errors", []):
             print(" -", err)
+        print("There seems to be an issue with the generated Union DFA. Make sure everything is correct and try again!")
