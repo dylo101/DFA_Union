@@ -86,10 +86,15 @@ def generateUnionTransitions(dfa1, dfa2, productStates):
 def generateUnionAcceptStates(dfa1, dfa2, productStates):
     unionAcceptStates = set()
     for (s1, s2) in productStates:
-        # Accept if either DFA accepts the component state
+        # Accept if either DFA accepts state
         if s1 in dfa1["accepts"] or s2 in dfa2["accepts"]:
             unionAcceptStates.add((s1, s2))
     return unionAcceptStates
+
+# Generate union DFA start state
+def generateUnionStartState(dfa1, dfa2):
+    return (dfa1["start"], dfa2["start"])
+
 
 
 #Test Function For Program
@@ -125,4 +130,8 @@ if __name__ == "__main__":
     print("\nUnion Accepting States:")
     for s in union_accepts:
         print(s)
+
+    union_start = generateUnionStartState(dfa1, dfa2)
+    print("\nUnion Start State:")
+    print(union_start)
 
