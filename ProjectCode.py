@@ -82,8 +82,18 @@ def generateUnionTransitions(dfa1, dfa2, productStates):
         "transitions": productTransitions
     }
 
+# Generate union DFA accepting states
+def generateUnionAcceptStates(dfa1, dfa2, productStates):
+    unionAcceptStates = set()
+    for (s1, s2) in productStates:
+        # Accept if either DFA accepts the component state
+        if s1 in dfa1["accepts"] or s2 in dfa2["accepts"]:
+            unionAcceptStates.add((s1, s2))
+    return unionAcceptStates
+
+
 #Test Function For Program
-#if __name__ == "__main__":
+if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python ProjectCode.py <input1.json> <input2.json>")
         sys.exit(1)
@@ -110,3 +120,9 @@ def generateUnionTransitions(dfa1, dfa2, productStates):
     print("\nUnion Transitions:")
     for s, transition in union_transitions.items():
         print(f"\n{s} -> {transition}")
+
+    union_accepts = generateUnionAcceptStates(dfa1, dfa2, union_states)
+    print("\nUnion Accepting States:")
+    for s in union_accepts:
+        print(s)
+
