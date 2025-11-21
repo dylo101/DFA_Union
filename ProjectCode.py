@@ -95,43 +95,107 @@ def generateUnionAcceptStates(dfa1, dfa2, productStates):
 def generateUnionStartState(dfa1, dfa2):
     return (dfa1["start"], dfa2["start"])
 
+def validateUnionDFA(dfa1, dfa2, productStates, productTransitions, productStartState, productAcceptStates):
 
+    # Collect errors here
+    errors = []
 
-#Test Function For Program
+    # Check start state validity
+    if productStartState not in productStates:
+        errors.append(f"Start state {productStartState} is not in product states.")
+
+    # Check transitions exist for every product state
+    for state in productStates:
+        if state not in productTransitions:
+            errors.append(f"No transitions found for product state {state}.")
+            continue
+        symbols = next(iter(dfa1["transitions"].values())).keys()
+        for symbol in symbols:
+            if symbol not in productTransitions[state]:
+                errors.append(f"State {state} missing transition on '{symbol}'.")
+            else:
+                nxt = productTransitions[state][symbol]
+                if nxt not in productStates:
+                    errors.append(f"Transition {state} --{symbol}--> {nxt} goes to invalid state.")
+
+    # Check accept states are inside product states
+    for acc in productAcceptStates:
+        if acc not in productStates:
+            errors.append(f"Accepting state {acc} is not a valid product state.")
+
+    # Reachability check from start state
+    reachable = set()
+    stack = [productStartState]
+
+    while stack:
+        cur = stack.pop()
+        if cur in reachable:
+            continue
+        reachable.add(cur)
+        for nxt in productTransitions.get(cur, {}).values():
+            if nxt not in reachable:
+                stack.append(nxt)
+    unreachable = productStates - reachable
+    if unreachable:
+        errors.append(f"Unreachable states: {unreachable}")
+
+    # Final report
+    if errors:
+        return {"result": "Validation Fail", "errors": errors}
+    else:
+        return {"result": "Validation Success"}
+
+# Test Function For Program
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python ProjectCode.py <input1.json> <input2.json>")
         sys.exit(1)
 
-    dfa1, dfa2 = sys.argv[1], sys.argv[2]
+    file1, file2 = sys.argv[1], sys.argv[2]
 
     try:
-        dfa1 = readDFA(dfa1)
-        dfa2 = readDFA(dfa2)
+        dfa1 = readDFA(file1)
+        dfa2 = readDFA(file2)
     except ValueError as e:
         print(e)
         sys.exit(1)
 
-    # Step 1: build Cartesian product of states
     union_states = generateUnionStates(dfa1, dfa2)
-
-    print("Union States:")
-    for s in union_states:
+    print("\n=== Union States ===")
+    for s in sorted(union_states):
         print(s)
 
-    # Step 2: build transition function from union states
-    union_transitions = generateUnionTransitions(dfa1, dfa2, union_states)
+    transitionsResult = generateUnionTransitions(dfa1, dfa2, union_states)
+    union_transitions = transitionsResult["transitions"]
 
-    print("\nUnion Transitions:")
-    for s, transition in union_transitions.items():
-        print(f"\n{s} -> {transition}")
+    print("\n=== Union Transitions ===")
+    for s, trans in sorted(union_transitions.items()):
+        print(f"{s}:")
+        for sym, dest in trans.items():
+            print(f"  on '{sym}' -> {dest}")
 
     union_accepts = generateUnionAcceptStates(dfa1, dfa2, union_states)
-    print("\nUnion Accepting States:")
-    for s in union_accepts:
+    print("\n=== Union Accepting States ===")
+    for s in sorted(union_accepts):
         print(s)
 
     union_start = generateUnionStartState(dfa1, dfa2)
-    print("\nUnion Start State:")
+    print("\n=== Union Start State ===")
     print(union_start)
 
+    print("\n=== Validation Result ===")
+    validation = validateUnionDFA(
+        dfa1,
+        dfa2,
+        union_states,
+        union_transitions,
+        union_start,
+        union_accepts
+    )
+
+    if validation["result"] == "Validation Success":
+        print("Validation Success")
+    else:
+        print("Validation Fail")
+        for err in validation.get("errors", []):
+            print(" -", err)
