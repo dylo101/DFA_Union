@@ -1,0 +1,15 @@
+{
+    "states": [
+        {
+            "state": "", 
+            "a": "", 
+            "b": ""
+        }
+    ],
+    "start-state": "",
+    "accept-states": [
+        {
+            "state": ""
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "states": [
+        {
+            "state": "r0", 
+            "a": "r1", 
+            "b": "r0"
+        },
+        {
+            "state": "r1", 
+            "a": "r1", 
+            "b": "r2"
+        },
+        {
+            "state": "r2", 
+            "a": "r2", 
+            "b": "r2"
+        }
+    ],
+    "start-state": "r0",
+    "accept-states": [
+        {
+            "state": "r2"
+        }
+    ]
+}
